@@ -1,0 +1,8 @@
+devel work on test branch
+
+.gitignore to make exception for this file using 
+!dummy1
+
+git add dummy1 .gitignore
+git commit -m "some work on test"
+git push -u testrepo test
