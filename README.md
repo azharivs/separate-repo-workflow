@@ -1,5 +1,6 @@
 
 # test
+```bash
 mkdir local_repo
 cd local_repo
 git init
@@ -49,3 +50,4 @@ vi .gitignore #make exception for appropriate files to .gitignore (test) (only t
 
 ########## ... or branch off local master 
 
+```
