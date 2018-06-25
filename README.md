@@ -38,5 +38,14 @@ git merge master #fast forward test pointer to rebased one (latest)
 git checkout $CUR_MASTER_HEAD #restore master head to original value
 vi .gitignore #make exception for appropriate files to .gitignore (test) (only those changed during devel and not those pulled from origin but not changed locally)
 
+# what if git pull origin adds/modifies some files not touched by testrepo? 
+# we don't want these to go into testrepo
+
+# what if some file f1 is modified via testrepo but is then also modified (or even deleted) via origin?
+# both versions of f1 should be merged and rebased onto testrepo upon pulling from origin
+
+# the commit of origin corresponding to each commit of testrepo should be stored in a certain file via githooks
+
+
 ########## ... or branch off local master 
 
