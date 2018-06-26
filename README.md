@@ -21,14 +21,29 @@ git push -u devrepo dev #push the skeleton of the dev branch to the devrepo
 git checkout master #always do work on master branch
 git pull origin master #get main code base from origin/master. This is possibly followed by merge into local master
 git commit -m "after merge or origin/master into master"
+#TODO .git/info/last_origin_pull stores the commit SHA-1 for this merge as a reference point for later rebase/cherry-picks of local/master onto local/dev (use client side git hooks for this)
+#TODO NEVER PUSH MASTER TO devrepo (use server side git hooks for this) Only allowed to push from dev branch to dev branch on devrepo
 
-########## pull in work from dev (devel) repo and marge into local master (if needed)
+########## Optional: pull in work from dev (devel) repo and marge into local master
 git pull devrepo dev #possibly followed by merge
 git commit -m "merge in devrepo/dev into local/master"
 
 ########### start developping on local/master .....
 #....
-commit -m "Final commit on local/master"
+git commit -m "Final commit on local/master"
+git add files changed but not staged in this dev session #add to staging
+
+#TODO NEVER allow push while on local/master because this will take all the history on master including base repo files into devrepo! (server side git hooks)
+#TODO NEVER allow commits while on local/dev branch (client side git hooks). local/dev branch only updated with cherry-picking or rebasing using automatic scripts (client side git hooks)
+
+########### time to commit changes ONLY to devrepo/dev use cherry picking
+git checkout master 
+git log #take commits after the last merge into master C1,C2,C3,... (client side git hooks can be used to store these in a file)
+git checkout dev #move to dev for cherry-picking onto it
+git cherry-pick C1 C2 C3 ...
+#resolve conflicts: if any modified file is not in dev then 
+#git add newly added files
+#git cherry-pick --continue
 
 ########### time to commit changes ONLY to devrepo/dev use a modified rebase
 export CUR_MASTER_HEAD = cat .git/refs/heads/master #store current master HEAD SHA-1
