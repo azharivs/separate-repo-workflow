@@ -1,3 +1,5 @@
+# Initialization Phase
+If you want to setup the main and dev repositories from scratch:
 
 ```bash
 mkdir local_repo
@@ -15,28 +17,38 @@ git checkout dev
 #git commit -m "added special .gitignore for dev branch"
 git push -u devrepo dev #push the skeleton of the dev branch to the devrepo
 ```
-
-get base code from origin repo
-
+However, in general these will be craeted beforehand. The only requirement is that the dev repo only have a dev branch and that both be introduced to the local work tree as remotes via:
 ```bash
-git checkout master #always do work on master branch
-git pull origin master #get main code base from origin/master. This is possibly followed by merge into local master
-git commit -m "after merge or origin/master into master"
-```
-
-**TODO:** `.git/info/last_origin_pull` stores the commit SHA-1 for this merge as a reference point for later rebase/cherry-picks of `local/master` onto `local/dev` (use client side git hooks for this)
-
-**TODO:** NEVER PUSH MASTER TO `devrepo` (use server side git hooks for this) Only allowed to push from `dev` branch to `dev` branch on `devrepo`
-
-Optional: pull in work from `dev` (devel) repo and marge into local `master`
-
-```bash
+git remote add origin https://origin_url
+git remote add devrepo http://devrepo_url #for development
 git checkout -b dev devrepo/dev #only for the first time when no branch dev is setup in local working tree
-git checkout dev #all other times: just checkout local dev and pull from devrepo
-git pull devrepo dev #all other times: possibly followed by merge
 ```
+# Development Workflow:
 
-local `dev` branch setup and updated now merge into local `master`
+* Pull in development code from `devrepo` into `master` local branch (and merge)
+* Pull in base code from `origin` repo into `master` local branch (and merge)
+* Develop on `master` branch of local work tree
+* Rebase/Cherry pick commits made onto a `dev` branch of local tree
+* Push work from a `dev` branch to `devrepo`
+
+
+**Step1. Pull in  code from devrepo:**
+
+Pull in work from the `dev` (devel) repo updating all dev branches and then marge into local `master` to start development on it.
+
+only for the first time when no branch dev is setup in local working tree
+```bash
+git checkout -b dev devrepo/dev 
+```
+all other times: just check out local dev and pull from devrepo
+```bash
+git checkout dev 
+git pull devrepo dev #possibly followed by merge
+```
+Local `dev` branches all setup and updated. Note that there may well be multiple branches off dev
+each belonging to a different development topic. Now merge `dev` into local `master`, with merge policy that 
+resolves conflicts by taking the `dev` copy of the files over the `origin/master` copy. The reason is that the development work
+has higher priority.
 
 ```bash
 git checkout master
@@ -44,33 +56,69 @@ git merge -X theirs dev
 git commit -m "merge in dev into master"
 ```
 
-start developping on local/master .....
+**Step2. Pull in  code from origin:**
+If desired, we can update base code (master branch) from origin. We should also record the merge SHA, in case a merge from origin into master has resulted in changing of a file on dev. This is because we later have to cherry pick the diff for this merge onto dev as well to reflect that change.
 
 ```bash
-git commit -m "Final commit on local/master"
-git add files changed but not staged in this dev session #add to staging
+git checkout master #always do work on master branch
+git pull origin master #get main code base from origin/master. This is possibly followed by merge into local master
+git commit -m "after merge of origin/master into master"
 ```
 
-**TODO:** NEVER allow push while on local/master because this will take all the history on master including base repo files into `devrepo`! (server side git hooks)
+**TODO:** `.git/info/LAST_ORIGIN_PULL` stores the commit SHA-1 for this merge as a reference point for later rebase/cherry-picks of `local/master` onto `local/dev` (use client side git hooks for this). Also store the merge parent which belongs to origin/master: .git/refs/remotes/master | ./git/ORIG_HEAD
 
-**TODO:** NEVER allow commits while on `local/dev` branch (client side git hooks). `local/dev` branch only updated with cherry-picking or rebasing using automatic scripts (client side git hooks)
+Check if a merge from origin into master has resulted in changing of a file on dev:
+```bash
+export CHERRY_PICK_MERGE=0
+git diff $(cat .git/info/LAST_ORIGIN_PULL) | grep -e "---" -e "+++" | cut -d'/' -f2-1000 > ./git/info/$LAST_ORIGIN_PULL.changed #obtain list of files changed by this merge
+git checkout dev
+#run some script to see if these two have common files in them?
+export CHERRY_PICK_MERGE=1 #if answer is yes
+cat .git/info/LAST_ORIGIN_PULL > ./git/info/CHERRY_PICK_COMMITS
+```
 
-time to commit changes ONLY to `devrepo/dev` use cherry picking
+**Step 3. Start developping on local/master:**
+Commit on master (or any one of its branches) as you work. With each commit also add the commit SHA to the list of cherry pick commits:
+```bash
+git add files changed but not staged in this dev session #add to staging
+git commit -m "commit on local/master"
+cat .git/HEAD >> ./git/info/CHERRY_PICK_COMMITS
+```
+
+Then when finished with development do that last commit:
+
+```bash
+git add files changed but not staged in this dev session #add to staging
+git commit -m "Final commit on local/master"
+cat .git/HEAD >> ./git/info/CHERRY_PICK_COMMITS
+```
+**Step 4. Cherry Pick onto dev:**
+Time to commit changes ONLY to `devrepo/dev` using cherry picking. This is also doable in one stage using rebasing. However, we are going to do it via repeated cherry picks that will be run for each commit starting from the latest git merge of origin into master. Take commits after the last merge into master C1,C2,C3,.... In case a merge from origin into master has resulted in changing of a file on dev then need to take this merge commit as well: M (client side git hooks can be used to store these in a file)
 
 ```bash
 git checkout master 
-git log #take commits after the last merge into master C1,C2,C3,.... In case a merge from origin into master has resulted in changing of a file staged on dev then need to take this merge commit as well: M (client side git hooks can be used to store these in a file)
+git log 
 git checkout dev #move to dev for cherry-picking onto it
 git cherry-pick [-m(1|2) M] C1 C2 C3 ... #also need to determine which parent of the merge? -m1 or -m2? TODO?
 ```
 
-resolve conflicts: if any modified file is not in dev then:
+Resolve conflicts: if any modified file is not in dev then:
 
 ```bash
 git add newly added files
 git cherry-pick --continue
 git push devrepo dev #push changes back upstream (server side git hooks ONLY ALLOW PUSH FROM dev to dev)
 ```
+
+
+**TODO:** NEVER PUSH MASTER TO `devrepo` (use server side git hooks for this) Only allowed to push from `dev` branches to `dev` branches on `devrepo`
+
+**TODO:** NEVER ALLOW BRANCHING OFF master; ONLY BRANCH OFF dev for different topics of development
+
+**TODO:** NEVER allow push while on local/master because this will take all the history on master including base repo files into `devrepo`! (server side git hooks)
+
+**TODO:** NEVER allow commits while on `local/dev` branch (client side git hooks). `local/dev` branch only updated with cherry-picking or rebasing using automatic scripts (client side git hooks)
+
 
 **TODO:** eliminate `.gitignore` no need for it because we are controlling what is kept on the `dev` branch locally and the `master` branch is only a private one locally.
 
