@@ -74,6 +74,7 @@ git push devrepo dev #push changes back upstream (server side git hooks ONLY ALL
 
 **TODO:** eliminate `.gitignore` no need for it because we are controlling what is kept on the `dev` branch locally and the `master` branch is only a private one locally.
 
+```bash
 # time to commit changes ONLY to devrepo/dev use a modified rebase
 # export CUR_MASTER_HEAD = cat .git/refs/heads/master #store current master HEAD SHA-1
 # git checkout master
@@ -82,19 +83,23 @@ git push devrepo dev #push changes back upstream (server side git hooks ONLY ALL
 # git merge master #fast forward dev pointer to rebased one (latest)
 # git checkout $CUR_MASTER_HEAD #restore master head to original value
 # vi .gitignore #make exception for appropriate files to .gitignore (dev) (only those changed during devel and not those pulled from origin but not changed locally)
+```
 
-What if git pull origin adds/modifies some files not touched by devrepo? 
-we don't want these to go into devrepo
+What if `git pull origin` adds/modifies some files not touched by `devrepo`? we don't want these to go into `devrepo`
 TODO: No problem as long as we record the commit hash of the merging `origin/master` into master and start cherry picking AFTER that (tested and works. Use client side git hooks to take care of)
 
-What if some file f2 is modified via devrepo but is then also modified (or even deleted) via origin?
-both versions of f2 should be merged and rebased onto dev upon pulling from origin
+What if some file `f2` is modified via `devrepo` but is then also modified (or even deleted) via `origin`?
+both versions of `f2` should be merged and rebased onto `dev` upon pulling from `origin`
 
-**option1:** keep origin version and discard devrepo's version: in this case devrepo has to be updated so that f2 is unstaged from it
+**option1:** keep origin version and discard devrepo's version: in this case devrepo has to be updated so that `f2` is unstaged from it
 
 **option2:** keep devrepo's version: no changes required to anything
 
 **option3:** modify origin's version to a newer one: this case will be an option 1 followed by the general approach of development so we should be fine. However, in this case it is best not to go with option 1 because then we have to delete it from devrepo and then add it again. So it is better to open up the text editor and start resolving conflicts! Then cherry-pick onto dev. In this case the merge itself has to be included in cherry picking and the parent used for getting the diff as well (-m1 or -m2) he parent used should be the one pointing to the change on the origin 
+
+```bash
+git diff pull_from_origin_merge_commit | grep -e "---" -e "+++" | cut -d'/' -f2-1000
+```
 
 **TODO:** the commit of origin corresponding to each commit of devrepo should be stored in a certain file via git hooks. This tells the developper what commit should be pulled from origin and marged onto master locally with devrepo/dev 
 
