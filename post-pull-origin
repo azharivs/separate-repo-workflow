@@ -6,6 +6,25 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
+PWD=$(pwd)
+GIT_DIR=$(echo ${PWD/.git/ } | cut -d' ' -f1)
+
+cd  $GIT_DIR #chdir to main git dir
+
+pwd 
+
+git log | head -2 | grep -e "Merge:"
+if [ $? = 1 ]
+then #last commit was NOT a merge
+    exit
+fi
+
+git log | head -2 | grep -e "Merge:" | grep $(head -c 7 .git/refs/remotes/origin/master)
+if [ $? = 1 ]
+then #last commit was NOT a merge from origin/master
+    exit
+fi
+
 echo "---------------------------------------------"
 echo "Upon pull origin/master: processing merge ..."
 
@@ -59,6 +78,5 @@ else
     echo "   Merge did not affect any files on dev so will not be included in next cherry pick."
 fi
 
-cat .git/info/CHERRY_PICK_COMMITS
 echo "---------------------------------------------"
 
