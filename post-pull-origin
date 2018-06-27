@@ -36,8 +36,6 @@ echo -e "local merge commit [${GREEN}" $(cat .git/info/LAST_ORIGIN_PULL) " ${NC}
 cat .git/refs/remotes/origin/master > .git/info/MERGE_SIDE #store the origin/master side of merge (parent) 
 echo -e "origin/master remote merge side commit [${GREEN}" $(cat .git/info/MERGE_SIDE) " ${NC}] stored in .git/info/MERGE_SIDE"
 
-git checkout dev #switch back to dev and git diff with top of dev to see changes 
-
 LAST_ORIGIN_PULL=$(cat .git/info/LAST_ORIGIN_PULL)
 git diff $LAST_ORIGIN_PULL^ $LAST_ORIGIN_PULL | grep -e "---" -e "+++" | cut -d'/' -f2-1000 > .git/info/$LAST_ORIGIN_PULL.change #obtain list of files changed by this merge
 echo "obtained list of files in working tree affected by this merge ->" .git/info/$LAST_ORIGIN_PULL.change
