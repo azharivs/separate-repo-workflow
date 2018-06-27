@@ -96,7 +96,7 @@ Commit on master (or any one of its branches) as you work. With each commit also
 ```bash
 git add files changed but not staged in this dev session #add to staging
 git commit -m "commit on local/master"
-cat .git/HEAD >> ./git/info/CHERRY_PICK_COMMITS
+cat .git/$(cat .git/HEAD | cut -d' ' -f2) >> ./git/info/CHERRY_PICK_COMMITS
 ```
 *TODO: Include the last line in the above provided git hooks*
 
@@ -105,7 +105,7 @@ Then when finished with development do that last commit:
 ```bash
 git add files changed but not staged in this dev session #add to staging
 git commit -m "Final commit on local/master"
-cat .git/HEAD >> ./git/info/CHERRY_PICK_COMMITS
+cat .git/$(cat .git/HEAD | cut -d' ' -f2) >> ./git/info/CHERRY_PICK_COMMITS
 ```
 
 **Step 4. Cherry Pick onto dev:**
