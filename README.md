@@ -25,11 +25,11 @@ git checkout -b dev devrepo/dev #only for the first time when no branch dev is s
 ```
 # Development Workflow:
 
-* Pull in development code from `devrepo` into `master` local branch (and merge)
-* Pull in base code from `origin` repo into `master` local branch (and merge)
-* Develop on `master` branch of local work tree
-* Rebase/Cherry pick commits made onto a `dev` branch of local tree
-* Push work from a `dev` branch to `devrepo`
+*1 Pull in development code from `devrepo` into `master` local branch (and merge)
+*2 Pull in base code from `origin` repo into `master` local branch (and merge)
+*3 Develop on `master` branch of local work tree
+*4 Rebase/Cherry pick commits made onto a `dev` branch of local tree
+*5 Push work from a `dev` branch to `devrepo`
 
 
 **Step1. Pull in  code from devrepo:**
@@ -96,15 +96,16 @@ Commit on master (or any one of its branches) as you work. With each commit also
 ```bash
 git add files changed but not staged in this dev session #add to staging
 git commit -m "commit on local/master"
-cat .git/HEAD >> ./git/info/CHERRY_PICK_COMMITS #not needed if using provided hook
+cat .git/HEAD >> ./git/info/CHERRY_PICK_COMMITS
 ```
-The last line is also included in the above provided git hooks so you don't need that if installing the hooks.
+*TODO: Include the last line in the above provided git hooks*
+
 Then when finished with development do that last commit:
 
 ```bash
 git add files changed but not staged in this dev session #add to staging
 git commit -m "Final commit on local/master"
-cat .git/HEAD >> ./git/info/CHERRY_PICK_COMMITS #not needed if using provided hook
+cat .git/HEAD >> ./git/info/CHERRY_PICK_COMMITS
 ```
 
 **Step 4. Cherry Pick onto dev:**
@@ -122,9 +123,11 @@ Resolve conflicts: if any modified file is not in dev then:
 ```bash
 git add newly added files
 git cherry-pick --continue
+```
+**Step 5. Push Changes Back Upstream:**
+```bash
 git push devrepo dev #push changes back upstream (server side git hooks ONLY ALLOW PUSH FROM dev to dev)
 ```
-
 
 **TODO:** NEVER PUSH MASTER TO `devrepo` (use server side git hooks for this) Only allowed to push from `dev` branches to `dev` branches on `devrepo`
 
@@ -136,17 +139,6 @@ git push devrepo dev #push changes back upstream (server side git hooks ONLY ALL
 
 
 **TODO:** eliminate `.gitignore` no need for it because we are controlling what is kept on the `dev` branch locally and the `master` branch is only a private one locally.
-
-```bash
-# time to commit changes ONLY to devrepo/dev use a modified rebase
-# export CUR_MASTER_HEAD = cat .git/refs/heads/master #store current master HEAD SHA-1
-# git checkout master
-# git rebase dev #rebase master onto dev so dev is updated with all diffs on master since ancestor
-# git checkout dev
-# git merge master #fast forward dev pointer to rebased one (latest)
-# git checkout $CUR_MASTER_HEAD #restore master head to original value
-# vi .gitignore #make exception for appropriate files to .gitignore (dev) (only those changed during devel and not those pulled from origin but not changed locally)
-```
 
 What if `git pull origin` adds/modifies some files not touched by `devrepo`? we don't want these to go into `devrepo`
 TODO: No problem as long as we record the commit hash of the merging `origin/master` into master and start cherry picking AFTER that (tested and works. Use client side git hooks to take care of)
