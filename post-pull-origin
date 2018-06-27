@@ -11,9 +11,7 @@ GITDIR=$(echo ${PWD/.git/ } | cut -d' ' -f1)
 
 cd  $GITDIR #chdir to main git dir
 
-pwd 
-
-env -i git checkout master
+#env -i git checkout master
 
 env -i git log | head -2 | grep -e "Merge:"
 if [ $? = 1 ]
