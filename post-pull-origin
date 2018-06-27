@@ -13,6 +13,8 @@ cd  $GIT_DIR #chdir to main git dir
 
 pwd 
 
+git checkout master
+
 git log | head -2 | grep -e "Merge:"
 if [ $? = 1 ]
 then #last commit was NOT a merge
@@ -34,8 +36,10 @@ echo -e "local merge commit [${GREEN}" $(cat .git/info/LAST_ORIGIN_PULL) " ${NC}
 cat .git/refs/remotes/origin/master > .git/info/MERGE_SIDE #store the origin/master side of merge (parent) 
 echo -e "origin/master remote merge side commit [${GREEN}" $(cat .git/info/MERGE_SIDE) " ${NC}] stored in .git/info/MERGE_SIDE"
 
+git checkout dev #switch back to dev and git diff with top of dev to see changes 
+
 LAST_ORIGIN_PULL=$(cat .git/info/LAST_ORIGIN_PULL)
-git diff $LAST_ORIGIN_PULL | grep -e "---" -e "+++" | cut -d'/' -f2-1000 > .git/info/$LAST_ORIGIN_PULL.change #obtain list of files changed by this merge
+git diff $LAST_ORIGIN_PULL^ $LAST_ORIGIN_PULL | grep -e "---" -e "+++" | cut -d'/' -f2-1000 > .git/info/$LAST_ORIGIN_PULL.change #obtain list of files changed by this merge
 echo "obtained list of files in working tree affected by this merge ->" .git/info/$LAST_ORIGIN_PULL.change
 
 git log | grep Merge: | cut -d' ' -f2 | grep $(head -c 7 .git/info/MERGE_SIDE) #use -m1
@@ -77,6 +81,8 @@ then #add merge to cherry pick
 else
     echo "   Merge did not affect any files on dev so will not be included in next cherry pick."
 fi
+
+git checkout master
 
 echo "---------------------------------------------"
 
