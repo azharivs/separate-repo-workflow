@@ -63,41 +63,50 @@ If desired, we can update base code (master branch) from origin. Resolve merge c
 git checkout master #always do work on master branch
 git pull origin master #get main code base from origin/master. This is possibly followed by merge into local master
 git commit -m "after merge of origin/master into master"
-cat .git/refs/heads/master > .git/info/LAST_ORIGIN_PULL #store merge SHA
-cat .git/refs/remotes/origin/master > .git/info/MERGE_SIDE #store the origin/master side of merge (parent) 
 ```
 
-The second to last line stores the the merge parent which belongs to origin/master. Note that `origin/master' should match the remote branch we are pulling in and should be set differently if the name of the remote and branch is different. This could potentially be used in cherry picking (see Step 4). The last line stores the commit SHA-1 for the resulting merge as a reference point for later rebase/cherry-picks of `local/master` onto `local/dev` (see Step 4) (can use client side git hooks for this). 
-
 Next we check if a merge from origin into master has resulted in changing of a file on dev. This will be used later in Step 4:
+The first line stores the the merge parent which belongs to origin/master. Note that `origin/master` should match the remote branch we are pulling in and should be set differently if the name of the remote and branch is different. This could potentially be used in cherry picking (see Step 4). The second line stores the commit SHA-1 for the resulting merge as a reference point for later rebase/cherry-picks of `local/master` onto `local/dev` (see Step 4) (can use client side git hooks for this). 
 
 ```bash
-export DONT_CHERRY_PICK_MERGE=0
+cat .git/refs/remotes/origin/master > .git/info/MERGE_SIDE #store the origin/master side of merge (parent) 
+cat .git/refs/heads/master > .git/info/LAST_ORIGIN_PULL #store merge SHA
 git diff $(cat .git/info/LAST_ORIGIN_PULL) | grep -e "---" -e "+++" | cut -d'/' -f2-1000 > ./git/info/$LAST_ORIGIN_PULL.change #obtain list of files changed by this merge
 git checkout dev #or checkout any other branch on dev 
 find . -path ./.git -prune -o -print | cut -d'/' -f2-1000 > .git/info/ALL_DEV_FILES.tmp #list of all files on dev
 grep -F -x -f .git/info/DEV_FILES.tmp ./git/info/$LAST_ORIGIN_PULL.change > .git/info/DEV_FILES.change #find those changed by merge which are also part of dev
-export DONT_CHERRY_PICK_MERGE=$? # grep will return with 1 if no matches found
+#next parts to be run only if changes are made (grep returns some matches)
 git log | grep Merge: | cut -d' ' -f2 | grep $(head -c 7 .git/info/MERGE_SIDE) #use -m1
 git log | grep Merge: | cut -d' ' -f3 | grep $(head -c 7 .git/info/MERGE_SIDE) #use -m2
-cat .git/info/LAST_ORIGIN_PULL > ./git/info/CHERRY_PICK_COMMITS
+cat .git/info/LAST_ORIGIN_PULL > ./git/info/CHERRY_PICK_COMMITS 
 ```
+You may use https://github.com/azharivs/separate-repo-workflow/blob/test/post-pull-origin as a full script performing all this and many more. To use this as a githook you may do the following:
+clone this repo into your .git/hooks/
+add symlinks post-commit and post-merge that point to this:
+```bash
+cd .git/hooks
+git clone https://github.com/azharivs/separate-repo-workflow.git
+ln -s separate-repo-workflow/post-pull-origin post-merge
+ln -s separate-repo-workflow/post-pull-origin post-commit
+```
+
 
 **Step 3. Start developping on local/master:**
 Commit on master (or any one of its branches) as you work. With each commit also add the commit SHA to the list of cherry pick commits:
 ```bash
 git add files changed but not staged in this dev session #add to staging
 git commit -m "commit on local/master"
-cat .git/HEAD >> ./git/info/CHERRY_PICK_COMMITS
+cat .git/HEAD >> ./git/info/CHERRY_PICK_COMMITS #not needed if using provided hook
 ```
-
+The last line is also included in the above provided git hooks so you don't need that if installing the hooks.
 Then when finished with development do that last commit:
 
 ```bash
 git add files changed but not staged in this dev session #add to staging
 git commit -m "Final commit on local/master"
-cat .git/HEAD >> ./git/info/CHERRY_PICK_COMMITS
+cat .git/HEAD >> ./git/info/CHERRY_PICK_COMMITS #not needed if using provided hook
 ```
+
 **Step 4. Cherry Pick onto dev:**
 Time to commit changes ONLY to `devrepo/dev` using cherry picking. This is also doable in one stage using rebasing. However, we are going to do it via repeated cherry picks that will be run for each commit starting from the latest git merge of origin into master. Take commits after the last merge into master C1,C2,C3,.... In case a merge from origin into master has resulted in changing of a file on dev then need to take this merge commit as well: M (client side git hooks can be used to store these in a file)
 
