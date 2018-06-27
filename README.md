@@ -71,14 +71,14 @@ The first line stores the the merge parent which belongs to origin/master. Note 
 ```bash
 cat .git/refs/remotes/origin/master > .git/info/MERGE_SIDE #store the origin/master side of merge (parent) 
 cat .git/refs/heads/master > .git/info/LAST_ORIGIN_PULL #store merge SHA
-git diff $(cat .git/info/LAST_ORIGIN_PULL) | grep -e "---" -e "+++" | cut -d'/' -f2-1000 > ./git/info/$LAST_ORIGIN_PULL.change #obtain list of files changed by this merge
+git diff $(cat .git/info/LAST_ORIGIN_PULL) | grep -e "---" -e "+++" | cut -d'/' -f2-1000 > .git/info/$LAST_ORIGIN_PULL.change #obtain list of files changed by this merge
 git checkout dev #or checkout any other branch on dev 
 find . -path ./.git -prune -o -print | cut -d'/' -f2-1000 > .git/info/ALL_DEV_FILES.tmp #list of all files on dev
-grep -F -x -f .git/info/DEV_FILES.tmp ./git/info/$LAST_ORIGIN_PULL.change > .git/info/DEV_FILES.change #find those changed by merge which are also part of dev
+grep -F -x -f .git/info/DEV_FILES.tmp .git/info/$LAST_ORIGIN_PULL.change > .git/info/DEV_FILES.change #find those changed by merge which are also part of dev
 #next parts to be run only if changes are made (grep returns some matches)
 git log | grep Merge: | cut -d' ' -f2 | grep $(head -c 7 .git/info/MERGE_SIDE) #use -m1
 git log | grep Merge: | cut -d' ' -f3 | grep $(head -c 7 .git/info/MERGE_SIDE) #use -m2
-cat .git/info/LAST_ORIGIN_PULL > ./git/info/CHERRY_PICK_COMMITS 
+cat .git/info/LAST_ORIGIN_PULL > .git/info/CHERRY_PICK_COMMITS 
 ```
 You may use https://github.com/azharivs/separate-repo-workflow/blob/test/post-pull-origin as a full script performing all this and many more. To use this as a githook you may do the following:
 clone this repo into your .git/hooks/
@@ -96,7 +96,7 @@ Commit on master (or any one of its branches) as you work. With each commit also
 ```bash
 git add files changed but not staged in this dev session #add to staging
 git commit -m "commit on local/master"
-cat .git/$(cat .git/HEAD | cut -d' ' -f2) >> ./git/info/CHERRY_PICK_COMMITS
+cat .git/$(cat .git/HEAD | cut -d' ' -f2) >> .git/info/CHERRY_PICK_COMMITS
 ```
 *TODO: Include the last line in the above provided git hooks*
 
@@ -105,7 +105,7 @@ Then when finished with development do that last commit:
 ```bash
 git add files changed but not staged in this dev session #add to staging
 git commit -m "Final commit on local/master"
-cat .git/$(cat .git/HEAD | cut -d' ' -f2) >> ./git/info/CHERRY_PICK_COMMITS
+cat .git/$(cat .git/HEAD | cut -d' ' -f2) >> .git/info/CHERRY_PICK_COMMITS
 ```
 
 **Step 4. Cherry Pick onto dev:**
