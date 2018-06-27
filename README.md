@@ -25,11 +25,11 @@ git checkout -b dev devrepo/dev #only for the first time when no branch dev is s
 ```
 # Development Workflow:
 
-* 1. Pull in development code from `devrepo` into `master` local branch (and merge)
-* 2. Pull in base code from `origin` repo into `master` local branch (and merge)
-* 3. Develop on `master` branch of local work tree
-* 4. Rebase/Cherry pick commits made onto a `dev` branch of local tree
-* 5. Push work from a `dev` branch to `devrepo`
+1. Pull in development code from `devrepo` into `master` local branch (and merge)
+2. Pull in base code from `origin` repo into `master` local branch (and merge)
+3. Develop on `master` branch of local work tree
+4. Rebase/Cherry pick commits made onto a `dev` branch of local tree
+5. Push work from a `dev` branch to `devrepo`
 
 
 **Step1. Pull in  code from devrepo:**
